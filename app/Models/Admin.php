@@ -9,7 +9,7 @@ use Illuminate\Foundation\Auth\User as Authenticable;
 class Admin extends Authenticable
 {
     use HasApiTokens;
-
+    
     protected $table = 'administrators';
     
     protected $fillable = [

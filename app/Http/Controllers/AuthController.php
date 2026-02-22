@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use App\Models\Admin;
-use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
@@ -49,14 +48,15 @@ class AuthController extends Controller
 
         // cek user dulu
         $user = User::where('username', $request->username)->first();
+        $role = 'user';
 
-        // kalau ga ada di user, cek admin
+        // kalau tidak ada di users, cek admin
         if (! $user) {
             $user = Admin::where('username', $request->username)->first();
             $role = 'admin';
         }
 
-        // credential salah
+        // kalau tidak ditemukan atau password salah
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status'  => 'error',
@@ -64,13 +64,12 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // login sukses
-        $token = $user->createToken('auth_token')->plainTextToken;
-        $role = 'user';
+        $token = $user->createToken('login-token')->plainTextToken;
+
         return response()->json([
             'status'  => 'success',
             'message' => 'Login successful',
-                'data'    => [
+            'data'    => [
                 'id'       => $user->id,
                 'username' => $user->username,
                 'role'     => $role,
@@ -81,16 +80,17 @@ class AuthController extends Controller
 
     // LOGOUT
     public function logout(Request $request)
-    {
-        $token = $request->user()->currentAccessToken();
-
+{
+    if (!$request->user()) {
         return response()->json([
-            'status' => 'success',
-            'message' => 'Logged out successfully',
-            'id' => [
-                'user' => $request->user(),
-                'token' => $request->token()
-            ]
-        ]);
+            'message' => 'Unauthenticated'
+        ], 401);
     }
+
+    $request->user()->tokens()->delete();
+
+    return response()->json([
+        'message' => 'Logged out successfully'
+    ]);
+}
 }
