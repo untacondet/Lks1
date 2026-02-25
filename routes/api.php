@@ -17,6 +17,7 @@ Route::get('/courses', [CourseController::class, 'index']);
 Route::get('/courses/{course_slug}', [CourseController::class, 'show']);
 Route::post('/courses/{course_slug}', [SetController::class, 'store']);
 
+
 Route::middleware('auth:sanctum')->get('/me', function (Request $request) {
     return response()->json($request->user());
 });
@@ -34,7 +35,7 @@ Route::middleware(['auth:sanctum', AdminMiddleware::class])->group(function(){
 
     Route::post('/courses/{course_slug}/register', [UserController::class, 'registerToCourse']);
     Route::get('/users/progress', [UserController::class, 'getProgress']);
-
+    Route::get('/courses', [CourseController::class, 'index']);
     Route::post('/lesson-contents/{content_id}/check-answer', [LessonController::class, 'checkAnswer']);
     Route::put('/lessons/{lesson_id}/complete', [LessonController::class, 'complete']);
 

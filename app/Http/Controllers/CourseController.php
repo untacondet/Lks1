@@ -82,6 +82,12 @@ class CourseController extends Controller
     public function index() {
         $courses = Course::where('is_published', true)->get();
 
+        if($courses->isEmpty()) {
+            return response()->json([
+                'status' => 'failed',
+            ]);
+        }
+
         return response()->json([
             'status' => 'Success',
             'message' => 'Courses retrieved successfully',
@@ -107,9 +113,8 @@ class CourseController extends Controller
             }])->where('slug', '$courseSlug')->first();
             
             return response()->json([
-                'status' => 'Success',
-                'message' => 'Course details retrieved successfully',
-                'data' => $course
+                'status' => 'failed',
+                'message' => 'Invalid token'
             ],200);
     }
 }

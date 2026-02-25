@@ -10,12 +10,11 @@ use App\Models\Option;
 use App\Models\CompletedLesson;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
-use App\Http\Controllers\user;
 
 class LessonController extends Controller
 {
-    public function store(Request $request) {
-        try{
+public function store (Request $request) {
+    try {
         $validated = $request->validate([
             'name' => 'required|string',
             'set_id' => 'required|exists:sets,id',
@@ -24,12 +23,11 @@ class LessonController extends Controller
             'contents.*.content' => 'required|string',
             'contents.*.order' => 'required|integer|min:0',
             'contents.*.options' => 'required_if:contents.*.type,quiz|array',
-            'contents.*.options.*.option_text' => 'required_if:contents.*.type,quiz|string',
-            'contents.*.options.*.is_correct' => 'required_if:contents.*.type,,quiz|boolean'
+            'contents.*.options.*.option_text' => 'required-if:contents.*.type,quiz|string',
+            'contents.*.options.*.is_correct' => 'required_if:contents.*.type,quiz|boolean',
         ]);
 
         DB::beginTransaction();
-
 
         $lesson = Lesson::create([
             'name' => $request->name,
@@ -37,85 +35,90 @@ class LessonController extends Controller
             'order' => $request->order ?? 0
         ]);
 
-        foreach ($request->contents as $index => $contentData){
+        foreach($request->contents as $index => $contentData){
             $content = LessonContent::create([
-                'lesson_id' => $lesson->id,
-                'type' => $contentData['type'],
-                'content' => $contentData['content'],
-                'order' => $index
+                'lesson_id' => $request->lesson_id,
+                'type' => $request->type,
+                'content' => $request->content,
+                'order' => $request->order ?? 0
             ]);
+        
 
-            if ($contentData['type'] === 'quiz' && isset ($contentData['options'])) {
-                foreach($contentData['options'] as $option) {
-                    Option::create([
-                        'lesson_content_id' => $content->id,
-                        'option_text' => $option['option_text'],
-                        'is_correct' => $option['is_correct']
-                    ]);
-                }
-            }
+        if($contentData['type'] === 'quiz' && isset($contentData['options'])) {
+            foreach ($contentData['options'] as $option) {
+                Option::create([
+                    'lesson_content_id' => $content->id,
+                    'option_text' => $option['option_text'],
+                    'is_correct' => $option['is_correct']
+                ]);
+            } 
         }
-            DB::commit();
+        }
+    
 
-    return response()->json([
-        'status' => 'success',
-        'message' => 'Lesson successfuly added',
-        'data' => [
-            'name' => $lesson->name,
-            'order' => $lesson->order,
-            'id' => $lesson->id
-        ]
-    ],201);
-    } catch(ValidationException $e) {
-        DB::rollBack();
+        DB::commit();
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Invalid field(s) in request',
-            'errors' => $e->errors()
-        ],400);
-    } catch(\Exception $e){
-        DB::rollBack();
-        throw $e;
-    }
+            'status' => 'success',
+            'message' => 'Lesson successfully added',
+            'data' => [
+                'name' => $lesson->name,
+                'order' => $lesson->order,
+                'id' => $lesson->id
+            ]
+        ], 201);
+        } catch (ValidationException $e) {
+            DB::rollBack();
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Invalid field(s) in request',
+                'errors' => $e->errors()
+            ],400);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+
+        }
     }
 
-    public function destroy($lessonId){
+    public function destroy($lessonId) {
         $lesson = Lesson::find($lessonId);
 
         if(!$lesson) {
             return response()->json([
                 'status' => 'not_found',
-                'messages' => 'Resource not found',
+                'message' => 'Resource not found'
             ],404);
         }
-        
+
         $lesson->delete();
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Lesson successfuly deleted'
+            'message' => 'Lesson successfully deleted'
         ], 200);
     }
 
-    public function checkAnswer(Request $request, $contentId){
+    public function checkAnswer(Request $request, $contentId)
+    {
         $lessonContent = LessonContent::find($contentId);
 
-        if(!$lessonContent){
+        if(!$lessonContent) {
             return response()->json([
                 'status' => 'not_found',
                 'message' => 'Resource not found'
             ], 404);
         }
-
+        
         $request->validate([
             'option_id' => 'required|exists:options,id'
         ]);
 
-        if ($lessonContent->type !== 'quiz') {
+        if($lessonContent->type !== 'quiz'){
             return response()->json([
                 'status' => 'error',
                 'message' => 'Only for quiz content'
-            ], 400);
+            ],400);
         }
 
         $selectedOption = Option::find($request->option_id);
@@ -128,17 +131,17 @@ class LessonController extends Controller
                 'user_answer' => $selectedOption->option_text,
                 'is_correct' => $selectedOption->is_correct
             ]
-        ],200);
+        ], 200);
     }
-
-    public function complete(Request $request, $lessonId) {
-        try{
+    public function complete(Request $request, $lessonId) 
+    {
+        try {
             $lesson = Lesson::findOrFail($lessonId);
 
             $existingComplete = CompletedLesson::where([
-                'user_id' => $request->user()->id,
+                'user_id' => $request->user_id,
                 'lesson_id' => $lessonId
-            ])->exist();
+            ])->exists();
 
             if($existingComplete) {
                 return response()->json([
@@ -147,11 +150,16 @@ class LessonController extends Controller
                 ], 400);
             }
 
-            CompletedLesson::created([
+            CompletedLesson::create([
                 'user_id' => $request->user()->id,
-                'message' => 'Lesson successfuly completed'
+                'lesson_id' => $lessonId
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Lesson successfully completed'
             ], 200);
-        }catch(ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => 'not_found',
                 'message' => 'Resource not found'
