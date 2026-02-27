@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Http;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -12,14 +13,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'is_admin' => \App\Http\Middleware\IsAdmin::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e,$request) {
-            if($request->is("api/*")){
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e,$request){
+            if($request->is('api/*')){
                 return response()->json([
-                    'message' => 'Invalid token'
-                ]);
+                "status"=> "invalid_token",
+                "message"=> "Invalid or expired token",
+                ],401);
             }
         });
     })->create();

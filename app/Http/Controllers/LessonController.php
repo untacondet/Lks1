@@ -159,6 +159,7 @@ public function store (Request $request) {
                 'status' => 'success',
                 'message' => 'Lesson successfully completed'
             ], 200);
+            
         } catch (ModelNotFoundException $e) {
             return response()->json([
                 'status' => 'not_found',

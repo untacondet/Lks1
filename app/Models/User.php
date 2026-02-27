@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Enrollment;
+use App\Models\CompletedLesson;
 
 class User extends Authenticatable
 {
@@ -48,7 +50,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function completedlesson()  {
+    public function completedlesson()  
+    {
         return $this->hasMany(CompletedLesson::class);
+    }
+
+    public function enrollments() 
+    {
+        return $this->hasMany(Enrollment::class);
     }
 }

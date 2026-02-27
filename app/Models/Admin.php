@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Foundation\Auth\User as Authenticable;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Admin extends Authenticable
+class Admin extends Authenticatable
 {
     use HasApiTokens;
     
@@ -15,7 +15,6 @@ class Admin extends Authenticable
     protected $fillable = [
         'username',
         'password',
-        'remember_token'
     ];
 
     protected $hidden = [
@@ -23,8 +22,4 @@ class Admin extends Authenticable
         'remember_token'
     ];
 
-    public function user() 
-    {
-        return $this->belongsTo(User::class);
-    }
 }

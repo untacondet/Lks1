@@ -14,11 +14,19 @@ use function Laravel\Prompts\error;
 class CourseController extends Controller
 {
     public function store(Request $request) {
-      $validator = Validator::make($request->all,[
+      $validator = Validator::make($request->all(),[
             'name' => 'required|string',
             'description' => 'nullable|string',
             'slug' => 'required|string|unique:courses,slug'
       ]);
+
+      if($validator->fails()){
+         return response()->json([
+            'status' => 'Error',
+            'messages' => 'Invalid field(s) request',
+            'Error' => $validator->errors()
+        ],400);
+      }
 
         $course = Course::create([
             'name' => $request->name,
@@ -28,10 +36,10 @@ class CourseController extends Controller
         ]);
 
         return response()->json([
-            'status' => 'Error',
-            'messages' => 'Invalid field(s) request',
-            'Error' => $validator->errors()
-        ],400);
+            'status'=>'sucsess'
+        ],200);
+
+       
     }
 
     public function update(Request $request, $courseSlug) {
