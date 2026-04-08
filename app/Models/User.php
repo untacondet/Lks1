@@ -50,7 +50,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function completedlesson()  
+    public function CompletedLesson()  
     {
         return $this->hasMany(CompletedLesson::class);
     }

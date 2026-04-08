@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\LessonContent;
 use App\Models\Option;
 use App\Models\CompletedLesson;
+use App\Models\User;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Validation\ValidationException;
 
@@ -136,10 +137,10 @@ public function store (Request $request) {
     public function complete(Request $request, $lessonId) 
     {
         try {
-            $lesson = Lesson::findOrFail($lessonId);
+            $lesson = Lesson::find($lessonId);
 
             $existingComplete = CompletedLesson::where([
-                'user_id' => $request->user_id,
+                'user_id' => $request->user()->id,
                 'lesson_id' => $lessonId
             ])->exists();
 

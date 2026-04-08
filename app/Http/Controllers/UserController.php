@@ -45,33 +45,32 @@ class UserController extends Controller
     }
 
     public function getProgress(Request $request){
-        $user = $request->user();
+         $user = $request->user();
 
-        $progress = $user->enrollments()
-        ->with(['course' => function ($query) {
-            $query->select('id', 'name', 'slug', 'description', 'is_published', 'created_at', 'updated_at');
-        }])
-        ->get()
-        ->map(function ($enrollment) use ($user){
-            $completedLessons = $user->completedLessons()
-            ->whereHas('set', function($query) use ($enrollment) {
-                $query->where('course_id', $enrollment->course_id);
-            })
-            ->select('id', 'name', 'order')
-            ->get();
+    $progress = $user->enrollments()->
+    with(['course' => function ($query) {
+        $query ->select('id', 'name', 'slug', 'description', 'is_published', 'created_at', 'updated_at');
+    }])->get()
+    ->map(function ($enrollment) use ($user) {
+        $completedlesson =$user->completedlesson()
+    ->join('lessons', 'completed_lessons.lesson_id', '=', 'lessons.id')
+    ->join('sets', 'lessons.set_id', '=', 'sets.id')                
+    ->where('sets.course_id', $enrollment->course_id)              
+    ->select('lessons.id', 'lessons.name', 'lessons.order')         
+    ->get();
 
-            return[
-                'course' => $enrollment->course,
-                'completed_lessons' => '$completedLessons'
-            ];
-        });
+        return[
+            'course' => $enrollment->course,
+            'completed_lessons'=>$completedlesson
+        ];
+    });
 
-        return response()->json([
+    return response()->json([
             'status' => 'success',
             'message' => 'User progress retrieved successfully',
             'data' => [
                 'progress' => $progress
             ]
-            ],200);
+    ],200);
     }
 }
